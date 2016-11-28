@@ -28,6 +28,7 @@ import datetime
 import platform
 import threading
 import xml.parsers.expat
+from ConfigParser import SafeConfigParser
 
 try:
     import gzip
@@ -442,6 +443,53 @@ def print_dots(current, total, start=False, end=False):
     if current + 1 == total and end is True:
         sys.stdout.write('\n')
     sys.stdout.flush()
+
+
+def write_mysql(mysql_config_file, results):
+    import MySQLdb as mysql
+    config = SafeConfigParser()
+    if not config.read(mysql_config_file):
+        raise SpeedtestConfigError
+
+    host = config.get('speedtest', 'host')
+    db = config.get('speedtest', 'db')
+    user = config.get('speedtest', 'user')
+    password = config.get('speedtest', 'password')
+
+    conn = mysql.connect(host, user, password, db)
+    try:
+        cur = conn.cursor()
+    except:
+        conn.close()
+        raise
+
+    server_data = {}
+    for key in ['latency', 'name', 'url', 'country', 'lon', 'cc', 'host',
+                'sponsor', 'url2', 'lat', 'id', 'd']:
+        try:
+            server_data[key] = results.server[key]
+        except:
+            server_data[key] = None
+
+    try:
+        cur.execute("""INSERT INTO results (`download`, `upload`, `timestamp`,
+                    `ping`, `server_latency`, `server_name`, `server_url`,
+                    `server_country`, `server_lon`, `server_cc`, `server_host`,
+                    `server_sponsor`, `server_url2`, `server_lat`, `server_id`,
+                    `server_d`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s, %s)""",
+                    (results.download, results.upload, results.timestamp,
+                     results.ping, server_data['latency'],
+                     server_data['name'],
+                     server_data['url'], server_data['country'],
+                     server_data['lon'], server_data['cc'],
+                     server_data['host'], server_data['sponsor'],
+                     server_data['url2'], server_data['lat'],
+                     server_data['id'], server_data['d']))
+        conn.commit()
+    finally:
+        cur.close()
+        conn.close()
 
 
 def do_nothing(*args, **kwargs):
@@ -1195,6 +1243,9 @@ def parse_args():
                         help='Suppress verbose output, only show basic '
                              'information in JSON format. Speeds listed in '
                              'bit/s and not affected by --bytes')
+    parser.add_argument('--mysql',
+                        help='Use the specified config file to connect to '
+                        'a MySQL database and store the results')
     parser.add_argument('--list', action='store_true',
                         help='Display a list of speedtest.net servers '
                              'sorted by distance')
@@ -1390,7 +1441,8 @@ def shell():
         print_(results.csv(delimiter=args.csv_delimiter))
     elif args.json:
         print_(results.json())
-
+    elif args.mysql:
+        write_mysql(args.mysql, results)
     if args.share:
         printer('Share results: %s' % results.share(), quiet)
 
