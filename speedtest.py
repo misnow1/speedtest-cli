@@ -474,18 +474,21 @@ def write_mysql(mysql_config_file, results):
             server_data[key] = None
 
     try:
-        cur.execute("""INSERT IGNORE INTO server_metadata (`server_latency`,
-                    `server_name`, `server_url`, `server_country`,
-                    `server_lon`, `server_cc`, `server_host`,
-                    `server_sponsor`, `server_url2`, `server_lat`, `server_id`,
-                    `server_d`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s)""",
-                    (server_data['latency'], server_data['name'],
-                     server_data['url'], server_data['country'],
-                     server_data['lon'], server_data['cc'],
-                     server_data['host'], server_data['sponsor'],
-                     server_data['url2'], server_data['lat'],
-                     server_data['id'], server_data['d']))
+        cur.execute("""SELECT server_id FROM server_metadata WHERE server_id =
+                    %s""", (server_data['id'], ))
+        if cur.rowcount == 0:
+            cur.execute("""INSERT INTO server_metadata (`server_latency`,
+                        `server_name`, `server_url`, `server_country`,
+                        `server_lon`, `server_cc`, `server_host`,
+                        `server_sponsor`, `server_url2`, `server_lat`,
+                        `server_id`, `server_d`) VALUES (%s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, %s, %s, %s)""",
+                        (server_data['latency'], server_data['name'],
+                         server_data['url'], server_data['country'],
+                         server_data['lon'], server_data['cc'],
+                         server_data['host'], server_data['sponsor'],
+                         server_data['url2'], server_data['lat'],
+                         server_data['id'], server_data['d']))
 
         cur.execute("""INSERT INTO results (`download`, `upload`, `timestamp`,
                     `ping`, `server_id`) VALUES (%s, %s, %s, %s, %s)""",
