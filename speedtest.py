@@ -474,7 +474,7 @@ def write_mysql(mysql_config_file, results):
             server_data[key] = None
 
     try:
-        cur.execute("""REPLACE INTO server_metadata (`server_latency`,
+        cur.execute("""INSERT IGNORE INTO server_metadata (`server_latency`,
                     `server_name`, `server_url`, `server_country`,
                     `server_lon`, `server_cc`, `server_host`,
                     `server_sponsor`, `server_url2`, `server_lat`, `server_id`,
