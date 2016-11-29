@@ -463,29 +463,34 @@ def write_mysql(mysql_config_file, results):
         conn.close()
         raise
 
-    server_data = {}
+    server_data = {
+        'id': results.server['id']
+    }
     for key in ['latency', 'name', 'url', 'country', 'lon', 'cc', 'host',
-                'sponsor', 'url2', 'lat', 'id', 'd']:
+                'sponsor', 'url2', 'lat', 'd']:
         try:
             server_data[key] = results.server[key]
         except:
             server_data[key] = None
 
     try:
-        cur.execute("""INSERT INTO results (`download`, `upload`, `timestamp`,
-                    `ping`, `server_latency`, `server_name`, `server_url`,
-                    `server_country`, `server_lon`, `server_cc`, `server_host`,
+        cur.execute("""REPLACE INTO server_metadata (`server_latency`,
+                    `server_name`, `server_url`, `server_country`,
+                    `server_lon`, `server_cc`, `server_host`,
                     `server_sponsor`, `server_url2`, `server_lat`, `server_id`,
-                    `server_d`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s, %s, %s)""",
-                    (results.download, results.upload, results.timestamp,
-                     results.ping, server_data['latency'],
-                     server_data['name'],
+                    `server_d`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s)""",
+                    (server_data['latency'], server_data['name'],
                      server_data['url'], server_data['country'],
                      server_data['lon'], server_data['cc'],
                      server_data['host'], server_data['sponsor'],
                      server_data['url2'], server_data['lat'],
                      server_data['id'], server_data['d']))
+
+        cur.execute("""INSERT INTO results (`download`, `upload`, `timestamp`,
+                    `ping`, `server_id`) VALUES (%s, %s, %s, %s, %s)""",
+                    (results.download, results.upload, results.timestamp,
+                     results.ping, server_data['id']))
         conn.commit()
     finally:
         cur.close()
