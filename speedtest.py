@@ -547,7 +547,8 @@ def write_mysql(mysql_config_file, results):
 
         cur.execute("""INSERT INTO results (`download`, `upload`, `timestamp`,
                     `ping`, `server_id`) VALUES (%s, %s, %s, %s, %s)""",
-                    (results.download, results.upload, int(time.time()),
+                    (results.download, results.upload,
+                     time.strftime('%Y-%m-%d %H:%M:%S'),
                      results.ping, server_data['id']))
         conn.commit()
     finally:
