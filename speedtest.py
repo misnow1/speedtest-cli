@@ -1348,6 +1348,9 @@ def parse_args():
                              'performance. To support systems with '
                              'insufficient memory, use this option to avoid a '
                              'MemoryError')
+    parser.add_argument('--retry-limit', dest='retry_limit',
+                        help='Try to get the speedtest configuration this '
+                        'many times', type=int, default=3)
     parser.add_argument('--version', action='store_true',
                         help='Show the version number and exit')
     parser.add_argument('--debug', action='store_true',
@@ -1455,12 +1458,17 @@ def shell():
     else:
         callback = print_dots
 
-    printer('Retrieving speedtest.net configuration...', quiet)
-    try:
-        speedtest = Speedtest()
-    except (ConfigRetrievalError, HTTP_ERRORS):
-        printer('Cannot retrieve speedtest configuration')
-        raise SpeedtestCLIError(get_exception())
+    retry_limit = args.retry_limit
+    speedtest = None
+    while not speedtest:
+        printer('Retrieving speedtest.net configuration...', quiet)
+        try:
+            speedtest = Speedtest()
+        except (ConfigRetrievalError, HTTP_ERRORS):
+            printer('Cannot retrieve speedtest configuration')
+            retry_limit -= 1
+            if retry_limit == 0:
+                raise SpeedtestCLIError(get_exception())
 
     if args.list:
         try:
