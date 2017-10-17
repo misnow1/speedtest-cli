@@ -24,6 +24,7 @@ import errno
 import signal
 import socket
 import timeit
+import time
 import datetime
 import platform
 import threading
@@ -546,7 +547,7 @@ def write_mysql(mysql_config_file, results):
 
         cur.execute("""INSERT INTO results (`download`, `upload`, `timestamp`,
                     `ping`, `server_id`) VALUES (%s, %s, %s, %s, %s)""",
-                    (results.download, results.upload, results.timestamp,
+                    (results.download, results.upload, int(time.time()),
                      results.ping, server_data['id']))
         conn.commit()
     finally:
